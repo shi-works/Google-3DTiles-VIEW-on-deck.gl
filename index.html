@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Google 3D tiles example</title>
+    <script src="https://unpkg.com/deck.gl@latest/dist.min.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        #credits {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            padding: 2px;
+            font-size: 15px;
+            color: white;
+            text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <div id="credits"></div>
+    <script>
+        const GOOGLE_API_KEY = 'YOUR_API_KEY';
+        const TILESET_URL = `https://tile.googleapis.com/v1/3dtiles/root.json`;
+        const data = d3.json('./A31-20-21_8303020033.geojson');
+        const creditsElement = document.getElementById('credits');
+        const deckgl = new deck.DeckGL({
+            container: 'map',
+            initialViewState: {
+                latitude: 36.368086,
+                longitude: 140.475681,
+                zoom: 15,
+                // bearing: 90,
+                pitch: 60,
+                height: 200
+            },
+            controller: true,
+            layers: [
+                new deck.Tile3DLayer({
+                    id: 'google-3d-tiles',
+                    data: TILESET_URL,
+                    loadOptions: {
+                        fetch: {
+                            headers: {
+                                'X-GOOG-API-KEY': GOOGLE_API_KEY
+                            }
+                        }
+                    },
+                    onTilesetLoad: tileset3d => {
+                        tileset3d.options.onTraversalComplete = selectedTiles => {
+                            const credits = new Set();
+                            selectedTiles.forEach(tile => {
+                                const { copyright } = tile.content.gltf.asset;
+                                copyright.split(';').forEach(credits.add, credits);
+                                creditsElement.innerHTML = [...credits].join('; ');
+                            });
+                            return selectedTiles;
+                        }
+                    },
+                    operation: 'terrain+draw'
+                }),
+                new deck.GeoJsonLayer({
+                    id: 'max-kouzui',
+                    data: data,
+                    stroked: false,
+                    filled: true,
+                    getFillColor: ({ properties }) => {
+                        const { A31_205 } = properties;
+                        // quantiles break
+                        if (A31_205 == 1)
+                            return [247, 245, 169]
+                        else if (A31_205 == 2)
+                            return [255, 216, 192]
+                        else if (A31_205 == 3)
+                            return [255, 183, 183]
+                        else if (A31_205 == 4)
+                            return [255, 145, 145]
+                        else if (A31_205 == 5)
+                            return [242, 133, 201]
+                        else if (A31_205 == 6)
+                            return [220, 122, 220]
+                    },
+                    opacity: 0.4,
+                    extensions: [new deck._TerrainExtension()]
+                })
+            ]
+        });
+    </script>
+</body>
+
+</html>
