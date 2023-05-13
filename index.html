@@ -80,6 +80,7 @@
                     stroked: false,
                     filled: true,
                     getFillColor: ({ properties }) => {
+                        // 浸水ランクで色分け
                         const { A31_205 } = properties;
                         if (A31_205 == 1)
                             return [247, 245, 169]
